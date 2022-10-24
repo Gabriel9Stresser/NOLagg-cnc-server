@@ -52,8 +52,7 @@ exports.port = async (req, res, next) => {
 
   serial_port = port
 
-  const base64 = fs.readFileSync(img, "base64");
-  const buffer = Buffer.from(base64, "base64");
+  const buffer = Buffer.from(img, "base64");
   fs.writeFileSync(__dirname + "/gcodes/no-lagg.jpeg", buffer);
 
   res.status(201).send('Requisição recebida com sucesso!');
