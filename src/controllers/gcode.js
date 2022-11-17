@@ -1,36 +1,33 @@
 var img2gcode = require("img2gcode");
-var SerialPort = require('serialport');
+var serialport = require("serialport");
+var SerialPort = serialport.SerialPort;
 const path = require('path');
 var LineByLineReader = require('line-by-line');
 const fs = require('fs');
 var base64Img = require('base64-img');
 
-var serial_port = 'COM3';
-
-function startSerialTransmission(data) {
-  var baud = 115200;
-  var serial = new SerialPort.SerialPort({path: serial_port, baudRate: baud});
-  lineByLine = new LineByLineReader('src/controllers/gcodes/no-lagg.gcode');
-
-  serial.on("open", function() {
-    lineByLine.on('line', function(line) {
-        console.log(line.split(":")[0])
-        serial.write(line + "\n");
-    });
-  });
-}
-
+var serial_port;
 
 exports.port = async (req, res, next) => {
   let port = req.body.port;
   var img = req.body.image;
 
   base64Img.imgSync(img, __dirname + "/gcodes", 'no-lagg');
+  serial_port = port;
 
   res.status(201).send('Requisição recebida com sucesso!');
 }
 
+exports.portList = async (req, res, next) => {
+  const serialList = await SerialPort.list();
+
+  res.status(201).send(serialList);
+}
+
+
 exports.gcode = async (req, res, next) => {
+  let port = req.body.port;
+  
   const dirPath = path.join(__dirname, '/gcodes/no-lagg.jpg');
 
   const options = {
@@ -51,11 +48,19 @@ exports.gcode = async (req, res, next) => {
     dirImg: dirPath,
   };
 
-  img2gcode
+  await img2gcode
     .start(options)
-    .on("log", str => console.log(str))
-    .then(data => {
-      startSerialTransmission(data)
+    .on("log", str => console.log(str));
+
+    var baud = 115200;
+    var serial = new SerialPort({path: port, baudRate: baud});
+    lineByLine = new LineByLineReader('src/controllers/gcodes/no-lagg.gcode');
+
+    await serial.on("open", function() {
+      lineByLine.on('line', function(line) {
+          console.log(line.split(":")[0])
+          serial.write(line + "\n");
+      });
     });
   res.status(201).send('Requisição recebida com sucesso!');
 }
