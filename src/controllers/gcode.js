@@ -5,6 +5,8 @@ const path = require('path');
 var LineByLineReader = require('line-by-line');
 const fs = require('fs');
 var base64Img = require('base64-img');
+var ProgressBar = require("progress"); // npm install progress
+var bar = new ProgressBar("Analyze: [:bar] :percent :etas", { total: 100 });
 
 var serial_port = 'COM5';
 
@@ -63,7 +65,10 @@ exports.gcode = async (req, res, next) => {
 
   await img2gcode
     .start(options)
-    .on("log", str => console.log(str));
+    .on("log", str => console.log(str))
+    .on("tick", (perc) => {
+      bar.update(perc);
+    });
 
     var baud = 115200;
     var serial = new SerialPort({path: port, baudRate: baud});
